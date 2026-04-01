@@ -1,6 +1,7 @@
-const { statement, createStatementData, calculateAmount, earnPoint, USD, totalVolumeCredits } = require("./main");
+import { statement, createStatementData, calculateAmount, earnPoint, USD, totalVolumeCredits } from "./main";
+import { Invoice } from "./createStatement";
 
-const invoice = {
+const invoice: Invoice = {
   customer: "BigCo",
   performances: [
     { playID: "hamlet", audience: 55 },
@@ -86,7 +87,7 @@ describe("calculateAmount", () => {
 // ── createStatementData (단위 테스트) ─────────────────────────────────────────
 
 describe("createStatementData", () => {
-  let data;
+  let data: ReturnType<typeof createStatementData>;
 
   beforeEach(() => {
     data = createStatementData(invoice);

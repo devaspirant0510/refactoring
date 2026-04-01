@@ -1,12 +1,16 @@
-const plays = require("./plays.json");
-const invoices = require("./invoices.json");
-const { createStatementData } = require("./createStatement");
+import invoicesData from "./invoices.json";
+import { createStatementData, Invoice, StatementData } from "./createStatement";
 
-function playFor(performance) {
-  return plays[performance.playID];
+export { createStatementData } from "./createStatement";
+
+const invoices = invoicesData as Invoice[];
+
+interface PerfWithPlay {
+  audience: number;
+  play: { type: string };
 }
 
-function calculateAmount(perf) {
+export function calculateAmount(perf: PerfWithPlay): number {
   let result = 0;
   switch (perf.play.type) {
     case "tragedy":
@@ -23,12 +27,12 @@ function calculateAmount(perf) {
       result += 300 * perf.audience;
       break;
     default:
-      throw new Error(`알 수 없는 장르: ${playFor(perf).type}`);
+      throw new Error(`알 수 없는 장르: ${perf.play.type}`);
   }
   return result;
 }
 
-function earnPoint(performance) {
+export function earnPoint(performance: PerfWithPlay): number {
   let volumeCredits = 0;
   volumeCredits += Math.max(performance.audience - 30, 0);
   // 희극 관객 5명마다 추가 포인트를 제공한다
@@ -38,7 +42,7 @@ function earnPoint(performance) {
   return volumeCredits;
 }
 
-function USD(aNumber) {
+export function USD(aNumber: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -46,27 +50,17 @@ function USD(aNumber) {
   }).format(aNumber / 100);
 }
 
-
-function totalVolumeCredits(invoice) {
+export function totalVolumeCredits(invoice: { performances: Array<{ volumeCredits: number }> }): number {
   let volumeCredits = 0;
-  for (let perf of invoice.performances) {
+  for (const perf of invoice.performances) {
     volumeCredits += perf.volumeCredits;
   }
   return volumeCredits;
 }
 
-function atotalAmount(invoice) {
-
-  let totalAmount = 0;
-  for (let perf of invoice.performances) {
-    totalAmount += perf.amount;
-  }
-  return totalAmount;
-}
-
-function renderPlainText(data) {
+function renderPlainText(data: StatementData): string {
   let result = `청구 내역 (고객명: ${data.customer})\n`;
-  for (let perf of data.performances) {
+  for (const perf of data.performances) {
     result += ` ${perf.play.name}: ${USD(perf.amount)} (${perf.audience}석)\n`;
   }
   result += `총액: ${USD(data.totalAmount)}\n`;
@@ -74,15 +68,17 @@ function renderPlainText(data) {
   return result;
 }
 
-function textStatement(invoice) {
+export function textStatement(invoice: Invoice): string {
   return renderPlainText(createStatementData(invoice));
 }
 
-function rednerHtml(data){
+export const statement = textStatement;
+
+function renderHtml(data: StatementData): string {
   let result = `<h1>청구 내역 (고객명: ${data.customer})</h1>\n`;
   result += "<table>\n";
   result += "<tr><th>연극</th><th>좌석 수</th><th>금액</th></tr>\n";
-  for (let perf of data.performances) {
+  for (const perf of data.performances) {
     result += `<tr><td>${perf.play.name}</td><td>${perf.audience}</td><td>${USD(perf.amount)}</td></tr>\n`;
   }
   result += "</table>\n";
@@ -90,11 +86,10 @@ function rednerHtml(data){
   result += `<p>적립 포인트: <em>${data.totalVolumeCredits}</em>점</p>\n`;
   return result;
 }
-function htmlStatement(invoice) {
-  return rednerHtml(createStatementData(invoice));
+
+export function htmlStatement(invoice: Invoice): string {
+  return renderHtml(createStatementData(invoice));
 }
 
 console.log(htmlStatement(invoices[0]));
 console.log(textStatement(invoices[0]));
-
-module.exports = { textStatement, htmlStatement };
