@@ -5,7 +5,7 @@ class Calculator {
     throw new Error("서브클래스에서 구현해야 합니다.");
   }
   earnPoint(audience) {
-    throw new Error("서브클래스에서 구현해야 합니다.");
+    return Math.max(audience - 30, 0);
   }
 }
 
@@ -17,9 +17,6 @@ class TragedyCalculator extends Calculator {
     }
     return result;
   }
-  earnPoint(audience) {
-    return Math.max(audience - 30, 0);
-  }
 
 }
 
@@ -29,16 +26,14 @@ class ComedyCalculator extends Calculator {
     if (audience > 20) {
       result += 10000 + 500 * (audience - 20);
     }
+    result += 300 * audience; // 기본 요금
     return result;
   }
   earnPoint(audience) {
-    let volumeCredits = 0;
-    volumeCredits += Math.max(audience - 30, 0)
-    volumeCredits += Math.floor(audience / 5);
-    return volumeCredits;
+    return super.earnPoint(audience) + Math.floor(audience / 5);
   }
 }
-function caculatorFactory(type) {
+function calculatorFactory(type) {
   switch (type) {
     case "tragedy":
       return new TragedyCalculator();
@@ -53,14 +48,6 @@ function createStatementData(invoice) {
     return plays[performance.playID];
   }
 
-  function calculateAmount(perf, calculator) {
-    return calculator.compute(perf.audience);
-  }
-
-  function earnPoint(performance, calculator) {
-    return calculator.earnPoint(performance.audience);
-  }
-
   function totalVolumeCredits(data) {
     return data.performances.reduce((total, perf) => total + perf.volumeCredits, 0);
   }
@@ -72,9 +59,9 @@ function createStatementData(invoice) {
   function enrichPerformance(aPerformance) {
     const result = Object.assign({}, aPerformance);
     result.play = playFor(result);
-    result.amount = calculateAmount(result, caculatorFactory(result.play.type));
-    result.volumeCredits = earnPoint(result, caculatorFactory(result.play.type));
-    
+    const calculator = calculatorFactory(result.play.type);
+    result.amount = calculator.compute(result.audience);
+    result.volumeCredits = calculator.earnPoint(result.audience);
     return result;
   }
 
